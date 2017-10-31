@@ -14,12 +14,18 @@ libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'ConsoleGame', False)
 
 player = Actors.Player(Name=" ", HPMax=10, Hp=10, Attack=3, Defence=1, Coins=0, Y=12, X=12, Symbol='@')
 
+global target
+
 objects = []
+enemies = []
 
 
 
 # ########################TESTMAP#########################x25 y22 550 chars
 smap = ['#########################',
+        '#   G                   #',
+        '#                       #',
+        '#                   G   #',
         '#                       #',
         '#                       #',
         '#                       #',
@@ -34,10 +40,7 @@ smap = ['#########################',
         '#                       #',
         '#                       #',
         '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
+        '#                  G    #',
         '#                       #',
         '#                       #',
         '#########################']
@@ -67,6 +70,8 @@ smap = ['#########################',
 
 
 def handleKeys():
+    global target
+
     key = libtcod.console_wait_for_keypress(True)  # turn-based
 
     playery, playerx = player.Y, player.X
@@ -88,7 +93,8 @@ def handleKeys():
         playerx += 1
 
     if isBlocked(playerx, playery):
-        pass # TODO target if enemy
+        target.LoseHealth(player.Attack)
+        print target.Hp
     else:
         player.move(playerx, playery)
 
@@ -105,14 +111,21 @@ def makeMapObjects(first):
             for x in range(SCREEN_WIDTH):
                 if smap[y][x] == '#':
                     objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
-                #TODO make Grunts here too
+                elif smap[y][x] == 'G':
+                    enemies.append(Actors.Grunt(Hp=1, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
                 #libtcod.console_put_char(0, x, y, smap[y][x], libtcod.BKGND_NONE)
 
 
 def isBlocked(x, y):
+    global target
     # check for any blocking objects
     for Object in objects:
         if Object.Blocks and Object.X == x and Object.Y == y:
+            return True
+
+    for Enemy in enemies:
+        if Enemy.Blocks and Enemy.X == x and Enemy.Y == y:
+            target = Enemy
             return True
 
     return False
@@ -126,6 +139,9 @@ def main():
     makeMapObjects(True)
     for Object in objects:
         Object.draw()
+
+    for Enemy in enemies:
+        Enemy.draw()
 
     while not libtcod.console_is_window_closed():
         player.draw()

@@ -19,13 +19,24 @@ class Actor(object):
         libtcod.console_put_char(0, self.X, self.Y, ' ', libtcod.BKGND_NONE)
 
 
-# class Grunt(Actor):
-#     def __init__(self, Hp=10, Attack=3, Defence=0, Loot=1):
-#         super(Grunt, self).__init__()
-#         self.Hp = Hp
-#         self.Attack = Attack
-#         self.Defence = Defence
-#         self.Loot = Loot
+class Grunt(Actor):
+    def __init__(self, Hp, Attack, Defence, Loot, Y, X, Symbol, Blocks=True):
+        super(Grunt, self).__init__(Y, X, Symbol, Blocks)
+        self.Hp = Hp
+        self.Attack = Attack
+        self.Defence = Defence
+        self.Loot = Loot
+        self.Enemy = True
+
+    def LoseHealth(self, amount):
+        #amount -= self.Defence
+
+        if amount > 0:
+            self.Hp -= amount
+
+        if self.Hp <= 0:
+            self.clear()
+            self.Blocks = False
 
 
 class Wall(Actor):
