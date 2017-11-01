@@ -107,8 +107,8 @@ def makeMapObjects(first):
         libtcod.console_set_default_foreground(0, libtcod.white)
         libtcod.console_print(0, 1, 24, "<v>^ : move around")
 
-        for y in range(SCREEN_HEIGHT-3):
-            for x in range(SCREEN_WIDTH):
+        for y in xrange(SCREEN_HEIGHT-3):
+            for x in xrange(SCREEN_WIDTH):
                 if smap[y][x] == '#':
                     objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
                 elif smap[y][x] == 'G':
