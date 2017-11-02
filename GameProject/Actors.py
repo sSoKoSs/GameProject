@@ -29,7 +29,7 @@ class Grunt(Actor):
         self.Enemy = True
 
     def LoseHealth(self, amount):
-        #amount -= self.Defence
+        amount -= self.Defence
 
         if amount > 0:
             self.Hp -= amount

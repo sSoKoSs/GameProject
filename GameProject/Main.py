@@ -46,7 +46,7 @@ smap = ['#########################',
         '#########################']
 #########################################################
 
-
+###TODO make the getName func or the config file TODO ###
 # def Name():
 #     global playerName
 #
@@ -113,7 +113,6 @@ def makeMapObjects(first):
                     objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
                 elif smap[y][x] == 'G':
                     enemies.append(Actors.Grunt(Hp=1, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
-                #libtcod.console_put_char(0, x, y, smap[y][x], libtcod.BKGND_NONE)
 
 
 def isBlocked(x, y):
