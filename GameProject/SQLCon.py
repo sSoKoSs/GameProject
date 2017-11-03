@@ -24,19 +24,15 @@ def searchNamesForID(Name):
     return False ,-1 # not found give invalid ID and False
 
 
+########## GET FUNCTIONS ###########
+
+
 def getPasswordForID(userID):
     try:
         return sqlQuery("SELECT Password FROM User WHERE ID = %s" % userID)[0][0]
     except:
         return -1 # -1 in case the userID is not in the database
 
-
-###TODO make the getStats for all of the objects func TODO###
-
-
-###TODO make the submitName / Password func TODO###
-
-###TODO make the setLevelIDForPlayer func TODO###
 
 def getMapDataForID(userID):
     map = []
@@ -52,15 +48,38 @@ def getMapDataForID(userID):
         ListStart, ListEnd = ListEnd, ListStart+50  # (0, 25) first line then swap them (25, 0) and add 50 (25, 50) to get the next line
     return map
 
+
+def getPlayerForUserID(UserID):
+    return sqlQuery("SELECT * FROM Player WHERE User_ID=%s" % UserID)
+
+
+def getEnemyForLevelID(LevelID):
+    return sqlQuery("SELECT * FROM Enemy WHERE Level_ID=%s" % LevelID)
+
+
+########## SET FUNCTIONS ###########
+
+
+def newUser(name, password):
+    cursor.execute("INSERT INTO User (name, password, level_ID) VALUES ('%s', '%s', 1)" % (name, password))
+    cnx.commit()
+
+
+def setLevelIDForUserID(UserID, level_ID):
+    cursor.execute("UPDATE User SET level_ID = %s WHERE ID = %s" % (level_ID, UserID))
+    cnx.commit()
+
+
+#newUser("htnsio", "1234567890")
+#print setLevelIDForUserID(1,2)
+#print sqlQuery("select * from User")
+#print "UPDATE User SET level_ID = %s WHERE ID = %s" % (5, 2)
 # map = getMapDataForID(1)
 # for line in map:
 #     print line
 
+def endConnection():
+    cursor.close()
+    cnx.close()
 
-
-
-# for result in cursor:
-#   print result
-
-cursor.close()
-cnx.close()
+endConnection()
