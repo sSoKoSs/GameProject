@@ -1,5 +1,6 @@
 import libtcodpy as libtcod
 import Actors
+import SQLCon as sql
 
 ##################################### INIT #####################################
 # actual size of the window
@@ -8,9 +9,13 @@ SCREEN_HEIGHT = 25
 
 libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'ConsoleGame', False)
+
+sqlcon = sql.sqlcon()
 ##################################### INIT #####################################
 
-
+#Temporary Variables
+PlayerID = 1
+####################
 
 player = Actors.Player(Name=" ", HPMax=10, Hp=10, Attack=3, Defence=1, Coins=0, Y=12, X=12, Symbol='@')
 
@@ -20,31 +25,9 @@ objects = []
 enemies = []
 
 
-
-# ########################TESTMAP#########################x25 y22 550 chars
-smap = ['#########################',
-        '#   G                   #',
-        '#                       #',
-        '#                   G   #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                       #',
-        '#                  G    #',
-        '#                       #',
-        '#                       #',
-        '#########################']
-#########################################################
+############## MAP ##############x25 y22 550 chars
+smap = sqlcon.getMapDataForID(PlayerID)
+#################################
 
 ###TODO make the getName func or the config file TODO ###
 # def Name():
@@ -153,6 +136,7 @@ def main():
         exit = handleKeys()
         if exit:
             break
+    sql.endConnection()
 
 
 if __name__ == '__main__':
