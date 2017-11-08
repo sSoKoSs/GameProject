@@ -15,6 +15,7 @@ sqlcon = sql.sqlcon()
 
 #Temporary Variables
 PlayerID = 1
+playerScore = 0
 ####################
 
 player = Actors.Player(Name=" ", HPMax=10, Hp=10, Attack=3, Defence=1, Coins=0, Y=12, X=12, Symbol='@')
@@ -23,7 +24,9 @@ global target
 
 objects = []
 enemies = []
+coins = []
 
+exit = -1, -1
 
 ############## MAP ##############x25 y22 550 chars
 smap = sqlcon.getMapDataForID(PlayerID)
@@ -52,8 +55,16 @@ smap = sqlcon.getMapDataForID(PlayerID)
 #     return playerName
 
 
+def makeLoot(x, y):
+    coins.append([x, y])
+    libtcod.console_set_default_foreground(0, libtcod.yellow)
+    libtcod.console_put_char(0, x, y, '$', libtcod.BKGND_NONE)
+
+
+
 def handleKeys():
-    global target
+    global target, playerScore
+    Loot = None
 
     key = libtcod.console_wait_for_keypress(True)  # turn-based
 
@@ -76,14 +87,37 @@ def handleKeys():
         playerx += 1
 
     if isBlocked(playerx, playery):
-        target.LoseHealth(player.Attack)
-        print target.Hp
+        #if try fails means it is not an enemy so ignore
+        try:
+            Loot = target.LoseHealth(player.Attack)
+            player.Hp -= 1
+        except:
+            pass
     else:
         player.move(playerx, playery)
 
+        # for all the coins check if player is on top if True then increase score
+        for i in coins:
+            if playerx == i[0] and playery == i[1]:
+                #remove the coin so player won't be able to get the same coin
+                coins.remove(i)
+                playerScore += 1
+                #clear the instructions and redraw the score there
+                libtcod.console_print(0, 1, 24, "                  ")
+                libtcod.console_print(0, 1, 24, "Score: %s" % playerScore)
+
+    if Loot != None:
+        #if try fails means it is not an enemy so ignore
+        try:
+            enemies.remove(target)
+            # Loot[0] = x , Loot[1] = y
+            makeLoot(Loot[0], Loot[1])
+        except:
+            pass
+
 
 def makeMapObjects(first):
-    global smap
+    global smap, exit
 
     if first:
         libtcod.console_clear(0)
@@ -96,14 +130,16 @@ def makeMapObjects(first):
                     objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
                 elif smap[y][x] == 'G':
                     enemies.append(Actors.Grunt(Hp=1, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
+                elif smap[y][x] == '<':
+                    exit = y, x
 
 
 def isBlocked(x, y):
     global target
-    # check for any blocking objects
-    for Object in objects:
-        if Object.Blocks and Object.X == x and Object.Y == y:
-            return True
+
+    if smap[y][x] == '#':
+        target = None
+        return True
 
     for Enemy in enemies:
         if Enemy.Blocks and Enemy.X == x and Enemy.Y == y:
@@ -125,9 +161,18 @@ def main():
     for Enemy in enemies:
         Enemy.draw()
 
+    libtcod.console_print(0, 1, 23, "HP: %s" % player.Hp)
+
     while not libtcod.console_is_window_closed():
+        libtcod.console_set_default_foreground(0, libtcod.white)
+        libtcod.console_print(0, 1, 23, "       ")
+        libtcod.console_print(0, 1, 23, "HP: %s" % player.Hp)
+
+        if player.Hp <= 0:
+            pass #TODO GAME OVER
+
         player.draw()
-        #print player.Y, " ", player.X
+
         libtcod.console_flush()  # draws(flushes) the buffer
 
         player.clear()
@@ -136,7 +181,7 @@ def main():
         exit = handleKeys()
         if exit:
             break
-    sql.endConnection()
+    sqlcon.endConnection()
 
 
 if __name__ == '__main__':

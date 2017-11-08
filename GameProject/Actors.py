@@ -37,6 +37,7 @@ class Grunt(Actor):
         if self.Hp <= 0:
             self.clear()
             self.Blocks = False
+            return self.X, self.Y
 
 
 class Wall(Actor):
