@@ -26,33 +26,34 @@ objects = []
 enemies = []
 coins = []
 
-exit = -1, -1
+exity, exitx = -1, -1
 
 ############## MAP ##############x25 y22 550 chars
 smap = sqlcon.getMapDataForID(PlayerID)
+LevelID = sqlcon.getLevelIDforUserID(PlayerID)
 #################################
 
-###TODO make the getName func or the config file TODO ###
-# def Name():
-#     global playerName
-#
-#     libtcod.console_clear(0)
-#     libtcod.console_print(0, 0, 0, "What is your name")
-#     libtcod.console_print(0, 0, 1, playerName)
-#     libtcod.console_print(0, 0, 2, "Press the Enter key to continue")
-#     libtcod.console_flush()
-#     key = libtcod.console_wait_for_keypress(False)
-#
-#     while not key.vk == libtcod.KEY_ENTER:
-#         playerName += str(unichr(key.vk))
-#
-#         libtcod.console_print(0, 0, 0, "What is your name")
-#         libtcod.console_print(0, 0, 1, playerName)
-#         libtcod.console_print(0, 0, 2, "Press the Enter key to continue")
-#         libtcod.console_flush()
-#         key = libtcod.console_wait_for_keypress(False)
-#
-#     return playerName
+
+def changeLevel():
+    global PlayerID, LevelID, smap
+    global objects, enemies, exitx, exity
+    # reset the object holders and the exit
+    objects = []
+    enemies = []
+    exity, exitx = -1, -1
+
+    #print "next level"
+    libtcod.console_clear(0)
+    sqlcon.setLevelIDForUserID(LevelID, PlayerID)
+
+    smap = sqlcon.getMapDataForID(PlayerID)
+
+    makeMapObjects(True)
+    for Object in objects:
+        Object.draw()
+
+    for Enemy in enemies:
+        Enemy.draw()
 
 
 def makeLoot(x, y):
@@ -63,7 +64,7 @@ def makeLoot(x, y):
 
 
 def handleKeys():
-    global target, playerScore
+    global target, playerScore, exity, exitx
     Loot = None
 
     key = libtcod.console_wait_for_keypress(True)  # turn-based
@@ -85,6 +86,13 @@ def handleKeys():
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
         playerx += 1
+
+    # key to move to another level
+    if libtcod.console_is_key_pressed(libtcod.KEY_SPACE):
+        if player.Y == exity and player.X == exitx:
+            global LevelID
+            LevelID += 1
+            changeLevel()
 
     if isBlocked(playerx, playery):
         #if try fails means it is not an enemy so ignore
@@ -117,7 +125,7 @@ def handleKeys():
 
 
 def makeMapObjects(first):
-    global smap, exit
+    global smap, exity, exitx
 
     if first:
         libtcod.console_clear(0)
@@ -130,8 +138,8 @@ def makeMapObjects(first):
                     objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
                 elif smap[y][x] == 'G':
                     enemies.append(Actors.Grunt(Hp=1, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
-                elif smap[y][x] == '<':
-                    exit = y, x
+                elif smap[y][x] == '>':
+                    exity, exitx = y, x
 
 
 def isBlocked(x, y):
@@ -153,7 +161,15 @@ def isBlocked(x, y):
 # Initialization & Main Loop
 #############################################
 def main():
+    global exity, exitx
     # login()
+
+    ### TESTING ###
+    global LevelID
+    LevelID = 1
+    changeLevel()
+    ### TESTING ###
+
     makeMapObjects(True)
     for Object in objects:
         Object.draw()
@@ -170,6 +186,8 @@ def main():
 
         if player.Hp <= 0:
             pass #TODO GAME OVER
+
+        libtcod.console_print(0, exitx, exity, ">")
 
         player.draw()
 

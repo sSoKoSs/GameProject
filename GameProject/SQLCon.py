@@ -50,6 +50,9 @@ class sqlcon:
             ListStart, ListEnd = ListEnd, ListStart+50  # (0, 25) first line then swap them (25, 0) and add 50 (25, 50) to get the next line
         return map
 
+    def getLevelIDforUserID(self, UserID):
+        return self.sqlQuery("SELECT Level_ID FROM user WHERE ID=%s" % UserID)
+
 
     def getPlayerForUserID(self, UserID):
         return self.sqlQuery("SELECT * FROM Player WHERE User_ID=%s" % UserID)
@@ -67,7 +70,7 @@ class sqlcon:
         self.cnx.commit()
 
 
-    def setLevelIDForUserID(self, UserID, level_ID):
+    def setLevelIDForUserID(self, level_ID, UserID):
         self.cursor.execute("UPDATE User SET level_ID = %s WHERE ID = %s" % (level_ID, UserID))
         self.cnx.commit()
 
