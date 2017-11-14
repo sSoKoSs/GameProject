@@ -14,9 +14,9 @@ sqlcon = sql.sqlcon()
 ##################################### INIT #####################################
 
 #Temporary Variables
-PlayerID = 1
 playerScore = 0
 ####################
+PlayerID = -1
 
 player = Actors.Player(Name=" ", HPMax=10, Hp=10, Attack=3, Defence=1, Coins=0, Y=12, X=12, Symbol='@')
 
@@ -29,26 +29,20 @@ coins = []
 exity, exitx = -1, -1
 
 ############## MAP ##############x25 y22 550 chars
-smap = sqlcon.getMapDataForID(PlayerID)
-LevelID = sqlcon.getLevelIDforUserID(PlayerID)
+smap = []
+LevelID = -1
 #################################
 
 
 def changeLevel():
     global PlayerID, LevelID, smap
-    global objects, enemies, exitx, exity
-    # reset the object holders and the exit
-    objects = []
-    enemies = []
-    exity, exitx = -1, -1
 
-    #print "next level"
     libtcod.console_clear(0)
     sqlcon.setLevelIDForUserID(LevelID, PlayerID)
 
     smap = sqlcon.getMapDataForID(PlayerID)
 
-    makeMapObjects(True)
+    makeMapObjects()
     for Object in objects:
         Object.draw()
 
@@ -124,22 +118,27 @@ def handleKeys():
             pass
 
 
-def makeMapObjects(first):
+def makeMapObjects():
     global smap, exity, exitx
+    global objects, enemies, coins, exitx, exity
 
-    if first:
-        libtcod.console_clear(0)
-        libtcod.console_set_default_foreground(0, libtcod.white)
-        libtcod.console_print(0, 1, 24, "<v>^ : move around")
+    objects = []
+    enemies = []
+    coins = []
+    exity, exitx = -1, -1
 
-        for y in xrange(SCREEN_HEIGHT-3):
-            for x in xrange(SCREEN_WIDTH):
-                if smap[y][x] == '#':
-                    objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
-                elif smap[y][x] == 'G':
-                    enemies.append(Actors.Grunt(Hp=1, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
-                elif smap[y][x] == '>':
-                    exity, exitx = y, x
+    libtcod.console_clear(0)
+    libtcod.console_set_default_foreground(0, libtcod.white)
+    libtcod.console_print(0, 1, 24, "<v>^ : move around")
+
+    for y in xrange(SCREEN_HEIGHT-3):
+        for x in xrange(SCREEN_WIDTH):
+            if smap[y][x] == '#':
+                objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
+            elif smap[y][x] == 'G':
+                enemies.append(Actors.Grunt(Hp=1, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
+            elif smap[y][x] == '>':
+                exity, exitx = y, x
 
 
 def isBlocked(x, y):
@@ -160,23 +159,29 @@ def isBlocked(x, y):
 #############################################
 # Initialization & Main Loop
 #############################################
-def main():
+def main(userID):
     global exity, exitx
-    # login()
 
-    ### TESTING ###
+    global PlayerID
+    PlayerID = userID
+
+    global smap
+    smap = []
+    smap = sqlcon.getMapDataForID(PlayerID)
+
     global LevelID
-    LevelID = 1
+    LevelID = sqlcon.getLevelIDforUserID(PlayerID)[0][0]
     changeLevel()
-    ### TESTING ###
 
-    makeMapObjects(True)
+    libtcod.console_set_default_foreground(0, libtcod.lighter_grey)
     for Object in objects:
         Object.draw()
 
+    libtcod.console_set_default_foreground(0, libtcod.green)
     for Enemy in enemies:
         Enemy.draw()
 
+    libtcod.console_set_default_foreground(0, libtcod.white)
     libtcod.console_print(0, 1, 23, "HP: %s" % player.Hp)
 
     while not libtcod.console_is_window_closed():
@@ -203,4 +208,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    print "Don't run this one run RunGame.py instead"
+    sqlcon.endConnection()

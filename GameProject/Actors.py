@@ -11,7 +11,6 @@ class Actor(object):
 
     def draw(self):
         #set the color and then draw the character that represents this object at its position
-        libtcod.console_set_default_foreground(0, libtcod.white)
         libtcod.console_put_char(0, self.X, self.Y, self.Symbol, libtcod.BKGND_NONE)
 
     def clear(self):
