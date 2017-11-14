@@ -10,6 +10,10 @@ class sqlcon:
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
+    def sqlPost(self, query):
+        self.cursor.execute(query)
+        self.cnx.commit()
+
 
     def searchNamesForID(self, Name):
         # example of use:
@@ -62,17 +66,15 @@ class sqlcon:
         return self.sqlQuery("SELECT * FROM Enemy WHERE Level_ID=%s" % LevelID)
 
 
+
     ########## SET FUNCTIONS ###########
 
-
     def newUser(self, name, password):
-        self.cursor.execute("INSERT INTO User (name, password, level_ID) VALUES ('%s', '%s', 1)" % (name, password))
-        self.cnx.commit()
+        self.sqlPost("INSERT INTO User (name, password, level_ID) VALUES ('%s', '%s', 1)" % (name, password))
 
 
     def setLevelIDForUserID(self, level_ID, UserID):
-        self.cursor.execute("UPDATE User SET level_ID = %s WHERE ID = %s" % (level_ID, UserID))
-        self.cnx.commit()
+        self.sqlPost("UPDATE User SET level_ID = %s WHERE ID = %s" % (level_ID, UserID))
 
 
     #### END the database Connection

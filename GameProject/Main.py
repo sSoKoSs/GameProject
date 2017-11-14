@@ -43,9 +43,11 @@ def changeLevel():
     smap = sqlcon.getMapDataForID(PlayerID)
 
     makeMapObjects()
+    libtcod.console_set_default_foreground(0, libtcod.lighter_grey)
     for Object in objects:
         Object.draw()
 
+    libtcod.console_set_default_foreground(0, libtcod.green)
     for Enemy in enemies:
         Enemy.draw()
 

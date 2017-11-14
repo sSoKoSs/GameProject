@@ -33,7 +33,11 @@ def main():
         while True:
             name = raw_input("Name > ")
 
-            #TODO check if name is taken
+            result, id = sqlcon.searchNamesForID(name)
+            if result:
+                os.system("cls")
+                print "name taken try another"
+                continue
 
             password = raw_input("Password > ")
             #validation
@@ -42,9 +46,8 @@ def main():
                 print "wrong password try again"
                 print "Register below."
                 continue
-            break
-
-            #TODO update the User table with the new user
+            sqlcon.newUser(name, password)
+            main() # to login again (just to make sure)
 
 def startGame(userID):
     sqlcon.endConnection()
