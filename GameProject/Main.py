@@ -38,7 +38,11 @@ def changeLevel():
     global PlayerID, LevelID, smap
 
     libtcod.console_clear(0)
-    sqlcon.setLevelIDForUserID(LevelID, PlayerID)
+    try:
+        sqlcon.setLevelIDForUserID(LevelID, PlayerID)
+    except:
+        LevelID = 1
+        changeLevel()
 
     smap = sqlcon.getMapDataForID(PlayerID)
 
@@ -50,6 +54,13 @@ def changeLevel():
     libtcod.console_set_default_foreground(0, libtcod.green)
     for Enemy in enemies:
         Enemy.draw()
+
+
+def postScore(score):
+    sqlcon.changeScoreForUserID(score, PlayerID)
+
+def getScore(ID):
+    return sqlcon.getScoreForUserID(ID);
 
 
 def makeLoot(x, y):
@@ -87,7 +98,9 @@ def handleKeys():
     if libtcod.console_is_key_pressed(libtcod.KEY_SPACE):
         if player.Y == exity and player.X == exitx:
             global LevelID
+            global playerScore
             LevelID += 1
+            postScore(playerScore)
             changeLevel()
 
     if isBlocked(playerx, playery):
@@ -121,6 +134,7 @@ def handleKeys():
 
 
 def makeMapObjects():
+    global playerScore
     global smap, exity, exitx
     global objects, enemies, coins, exitx, exity
 
@@ -131,7 +145,11 @@ def makeMapObjects():
 
     libtcod.console_clear(0)
     libtcod.console_set_default_foreground(0, libtcod.white)
-    libtcod.console_print(0, 1, 24, "<v>^ : move around")
+    #don't show instructions when player has some score
+    if playerScore == 0:
+        libtcod.console_print(0, 1, 24, "<v>^ : move around")
+    else:
+        libtcod.console_print(0, 1, 24, "Score: %s" % playerScore)
 
     for y in xrange(SCREEN_HEIGHT-3):
         for x in xrange(SCREEN_WIDTH):
@@ -167,12 +185,17 @@ def main(userID):
     global PlayerID
     PlayerID = userID
 
+    global playerScore
+    playerScore = getScore(PlayerID)[0][0]
+    if playerScore == None:
+        playerScore = 0
+
     global smap
     smap = []
     smap = sqlcon.getMapDataForID(PlayerID)
 
     global LevelID
-    LevelID = sqlcon.getLevelIDforUserID(PlayerID)[0][0]
+    LevelID = 1#sqlcon.getLevelIDforUserID(PlayerID)[0][0]
     changeLevel()
 
     libtcod.console_set_default_foreground(0, libtcod.lighter_grey)

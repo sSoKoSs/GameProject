@@ -57,14 +57,14 @@ class sqlcon:
     def getLevelIDforUserID(self, UserID):
         return self.sqlQuery("SELECT Level_ID FROM user WHERE ID=%s" % UserID)
 
+    def getScoreForUserID(self, UserID):
+        return self.sqlQuery("SELECT score FROM user WHERE ID=%s" % UserID)
 
     def getPlayerForUserID(self, UserID):
         return self.sqlQuery("SELECT * FROM Player WHERE User_ID=%s" % UserID)
 
-
     def getEnemyForLevelID(self, LevelID):
         return self.sqlQuery("SELECT * FROM Enemy WHERE Level_ID=%s" % LevelID)
-
 
 
     ########## SET FUNCTIONS ###########
@@ -72,6 +72,8 @@ class sqlcon:
     def newUser(self, name, password):
         self.sqlPost("INSERT INTO User (name, password, level_ID) VALUES ('%s', '%s', 1)" % (name, password))
 
+    def changeScoreForUserID(self, score, UserID):
+        self.sqlPost("UPDATE User SET score = %s WHERE ID = %s" % (score, UserID))
 
     def setLevelIDForUserID(self, level_ID, UserID):
         self.sqlPost("UPDATE User SET level_ID = %s WHERE ID = %s" % (level_ID, UserID))
