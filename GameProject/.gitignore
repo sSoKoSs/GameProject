@@ -1,2 +1,5 @@
 #python
 *.pyc
+
+#for the config file/s
+*.txt
