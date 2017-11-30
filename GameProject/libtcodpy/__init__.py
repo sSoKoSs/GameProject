@@ -253,7 +253,6 @@ _lib.TCOD_color_multiply_scalar.restype=Color
 _lib.TCOD_color_multiply_scalar.argtypes=[Color , c_float ]
 
 # Should be valid on any platform, check it!  Has to be done after Color is defined.
-# NOTE(rmtew): This should ideally be deleted.  Most of it is moved or duplicated here.
 if MAC:
     from .cprotos import setup_protos
     setup_protos(_lib)

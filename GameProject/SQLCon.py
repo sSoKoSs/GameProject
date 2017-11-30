@@ -66,6 +66,9 @@ class sqlcon:
     def getEnemyForLevelID(self, LevelID):
         return self.sqlQuery("SELECT * FROM Enemy WHERE Level_ID=%s" % LevelID)
 
+    def getPlayersStats(self, UserID):
+        # FIXME
+        return self.sqlQuery("SELECT * FROM Player WHERE User_ID=%s" % UserID)#[0]
 
     ########## SET FUNCTIONS ###########
 
@@ -78,6 +81,8 @@ class sqlcon:
     def setLevelIDForUserID(self, level_ID, UserID):
         self.sqlPost("UPDATE User SET level_ID = %s WHERE ID = %s" % (level_ID, UserID))
 
+    def setPlayerStats(self, MaxHP, CurrentHP, Attack, Defence, UserID):
+        self.sqlPost("UPDATE Player SET MaxHP=%s, CurrentHP=%s, Attack=%s, Defence=%s WHERE User_ID=%s" % (MaxHP, CurrentHP, Attack, Defence, UserID))
 
     #### END the database Connection
     def endConnection(self):

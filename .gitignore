@@ -3,3 +3,6 @@
 
 #for the config file/s
 *.txt
+
+#Task config
+/.imdone

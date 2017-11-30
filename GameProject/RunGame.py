@@ -5,11 +5,10 @@ import os
 sqlcon = SQLCon.sqlcon()
 
 def main():
-    #TODO check for config to auto load Name
-
     print "Welcome to this roguelike (the game is not fun its just to test out the sql database)"
     awnser = raw_input("(L)ogin or (R)egister or (A)utoLogin > ")
 
+    #This checks and reads the config.txt to get the id and start the game
     if awnser == "A" or awnser == "a":
         try:
             conf = open("config.txt","r")
@@ -31,6 +30,7 @@ def main():
             password = raw_input("Password > ")
             os.system("cls")
 
+            #result returns true if the <name> is in the database
             result, userID = sqlcon.searchNamesForID(name)
             if result:
                 if password == sqlcon.getPasswordForID(userID):
@@ -63,11 +63,16 @@ def main():
                 continue
 
             sqlcon.newUser(name, password)
+            UserID = sqlcon.sqlQuery("SELECT ID from User WHERE Name='%s'" % name)
+            sqlcon.sqlPost("INSERT INTO Player (MaxHP, CurrentHP, PotisionX, PotisionY, Attack, Defence, User_ID) VALUES (10, 10, 1, 1, 3, 1, %s)" % UserID)
             main() # to login again (just to make sure)
+            return
 
+#Makes the config.txt file and saves the current logged or registered ID
 def autoConnect(UserID):
     print "Do you want to auto-join the next time? (y/n)"
     auto = raw_input("Auto > ")
+
     if auto == "y" or auto == "Y":
         with open("config.txt","w") as conf:
             conf.write(str(UserID))

@@ -16,10 +16,8 @@ sqlcon = sql.sqlcon()
 #Temporary Variables
 playerScore = 0
 ####################
-PlayerID = -1
-
-player = Actors.Player(Name=" ", HPMax=10, Hp=10, Attack=3, Defence=1, Coins=0, Y=12, X=12, Symbol='@')
-
+global player
+global PlayerID
 global target
 
 objects = []
@@ -71,7 +69,7 @@ def makeLoot(x, y):
 
 
 def handleKeys():
-    global target, playerScore, exity, exitx
+    global target, playerScore, exity, exitx, player
     Loot = None
 
     key = libtcod.console_wait_for_keypress(True)  # turn-based
@@ -175,15 +173,34 @@ def isBlocked(x, y):
 
     return False
 
+def resetPlayer():
+    postScore(0)
+
+    # TODO In progress look sqlcon
+
+def gameOver():
+    libtcod.console_set_default_foreground(0, libtcod.red)
+    libtcod.console_print(0, 9, 10, "GAMEOVER")
+    libtcod.console_flush()
+
+    resetPlayer()
+
+    libtcod.console_wait_for_keypress(True)
 
 #############################################
 # Initialization & Main Loop
 #############################################
 def main(userID):
-    global exity, exitx
-
     global PlayerID
     PlayerID = userID
+
+    global player
+    # playerstats all the values ID(Primary Key) and User_ID(Fotrign Key) are useless for now
+    ID, MaxHP, CurrentHP, PositionX, PositionY, Attack, Defence, User_ID = sqlcon.getPlayersStats(PlayerID)[0]
+    player = Actors.Player("NAMEHERE", MaxHP, CurrentHP, Attack, Defence, 0, PositionY, PositionX, '@')
+    # TODO put the name here ^^^^^^
+
+    global exity, exitx
 
     global playerScore
     playerScore = getScore(PlayerID)[0][0]
@@ -195,7 +212,7 @@ def main(userID):
     smap = sqlcon.getMapDataForID(PlayerID)
 
     global LevelID
-    LevelID = 1#sqlcon.getLevelIDforUserID(PlayerID)[0][0]
+    LevelID = 1
     changeLevel()
 
     libtcod.console_set_default_foreground(0, libtcod.lighter_grey)
@@ -215,7 +232,8 @@ def main(userID):
         libtcod.console_print(0, 1, 23, "HP: %s" % player.Hp)
 
         if player.Hp <= 0:
-            pass #TODO GAME OVER
+            gameOver()
+            break
 
         libtcod.console_print(0, exitx, exity, ">")
 
