@@ -69,8 +69,7 @@ def makeLoot(x, y):
 
 
 def handleKeys():
-    global target, playerScore, exity, exitx, player
-    Loot = None
+    global  playerScore, exity, exitx, player
 
     key = libtcod.console_wait_for_keypress(True)  # turn-based
 
@@ -100,6 +99,14 @@ def handleKeys():
             LevelID += 1
             postScore(playerScore)
             changeLevel()
+
+    handleCollisionWithObjects(playerx, playery)
+
+
+def handleCollisionWithObjects(playerx, playery):
+    global target, playerScore
+
+    Loot = None
 
     if isBlocked(playerx, playery):
         #if try fails means it is not an enemy so ignore
