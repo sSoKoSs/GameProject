@@ -38,6 +38,10 @@ class Grunt(Actor):
             self.Blocks = False
             return self.X, self.Y
 
+    def move(self, x, y):
+        self.X = x
+        self.Y = y
+
 
 class Wall(Actor):
     def __init__(self, Y, X, Symbol='#', Blocks=True):

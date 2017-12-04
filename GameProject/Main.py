@@ -1,6 +1,7 @@
 import libtcodpy as libtcod
 import Actors
 import SQLCon as sql
+import random
 
 # TODO make enemies move with Djikstra map
 # TODO implement Health potions
@@ -32,6 +33,7 @@ exity, exitx = -1, -1
 ############## MAP ##############x25 y22 550 chars
 smap = []
 LevelID = -1
+levelChange = False
 #################################
 
 
@@ -76,6 +78,9 @@ def makeLoot(x, y):
 def handleKeys():
     global  playerScore, exity, exitx, player, PlayerID
 
+    global levelChange
+    levelChange = False
+
     key = libtcod.console_wait_for_keypress(True)  # turn-based
 
     playery, playerx = player.Y, player.X
@@ -99,8 +104,10 @@ def handleKeys():
     # key to move to another level
     if libtcod.console_is_key_pressed(libtcod.KEY_SPACE):
         if player.Y == exity and player.X == exitx:
-            global LevelID
-            global playerScore
+            global LevelID, playerScore
+
+            levelChange = True
+
             LevelID += 1
             postScore(playerScore)
             sqlcon.setPlayerStats(player.HPMax, player.Hp, player.Attack, player.Defence, PlayerID)
@@ -172,7 +179,7 @@ def makeMapObjects():
                 exity, exitx = y, x
 
 
-def isBlocked(x, y):
+def isBlocked(x, y, isEnemy=False):
     global target
 
     if smap[y][x] == '#':
@@ -184,11 +191,17 @@ def isBlocked(x, y):
             target = Enemy
             return True
 
+    if isEnemy and player.X == x and player.Y == y:
+            return True
+
     return False
 
 def resetPlayer():
+    global PlayerID
+
     postScore(0)
     changeLevel(1)
+    sqlcon.setPlayerStats(10, 10, 3, 1, PlayerID)
 
 def gameOver():
     libtcod.console_set_default_foreground(0, libtcod.red)
@@ -199,10 +212,54 @@ def gameOver():
 
     libtcod.console_wait_for_keypress(True)
 
+def moveEnemies():
+    global enemies
+
+    for enemy in enemies:
+        decision = random.randint(0,1)
+        ymove = 0
+        xmove = 0
+
+        # for Y movement calculate where to go
+        if enemy.Y < player.Y:
+            ymove += 1
+        else:
+            ymove -= 1
+
+        # for X movement calculate where to go
+        if enemy.X < player.X:
+            xmove += 1
+        else:
+            xmove -= 1
+
+        print enemy.X, enemy.Y, xmove, ymove
+
+        # TODO make this better and smaller
+        # FIXME enemies can go into the player's position
+
+        # if 0 and you can move then move on the Y axis else move on X if you can else stay
+        if decision == 0:
+            # Check blocking
+            if not isBlocked(enemy.X, enemy.Y + ymove):
+                enemy.move(enemy.X, enemy.Y + ymove)
+
+            elif not isBlocked(enemy.X + xmove, enemy.Y):
+                enemy.move(enemy.X + xmove, enemy.Y)
+
+        else:
+            if not isBlocked(enemy.X + xmove, enemy.Y):
+                enemy.move(enemy.X + xmove, enemy.Y)
+
+            elif not isBlocked(enemy.X, enemy.Y + ymove):
+                enemy.move(enemy.X, enemy.Y + ymove)
+
+
 #############################################
 # Initialization & Main Loop
 #############################################
 def main(userID):
+    global changeLevel
+
     global PlayerID
     PlayerID = userID
 
@@ -231,9 +288,9 @@ def main(userID):
     for Object in objects:
         Object.draw()
 
-    libtcod.console_set_default_foreground(0, libtcod.green)
-    for Enemy in enemies:
-        Enemy.draw()
+    # libtcod.console_set_default_foreground(0, libtcod.green)
+    # for Enemy in enemies:
+    #     Enemy.draw()
 
     libtcod.console_set_default_foreground(0, libtcod.white)
     libtcod.console_print(0, 1, 23, "HP: %s" % player.Hp)
@@ -255,8 +312,22 @@ def main(userID):
 
         player.clear()
 
+        for Enemy in enemies:
+            Enemy.clear()
+
         # handle keys and exit game if needed
         exit = handleKeys()
+
+        if levelChange:
+            continue
+
+        moveEnemies()
+
+        libtcod.console_set_default_foreground(0, libtcod.green)
+        for Enemy in enemies:
+            Enemy.draw()
+
+
         if exit:
             break
     sqlcon.endConnection()
