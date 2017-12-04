@@ -8,17 +8,19 @@ def main():
     print "Welcome to this roguelike (the game is not fun its just to test out the sql database)"
     awnser = raw_input("(L)ogin or (R)egister or (A)utoLogin > ")
 
+    ################## AUTOLOGIN ######################
     #This checks and reads the config.txt to get the id and start the game
     if awnser == "A" or awnser == "a":
-        try:
+        if os.path.isfile("config.txt"):
             conf = open("config.txt","r")
             UserID = conf.read()
             conf.close()
             startGame(UserID)
             return
-        except:
-            awnser = "NLY"
+        else:
+            awnser = "NLY" # Not Logged in Yet
 
+    ################### LOGIN ##########################
     if awnser == "L" or awnser == "l" or awnser == "NLY":
         os.system("cls")
         if awnser == "NLY":
@@ -40,7 +42,7 @@ def main():
             os.system("cls")
             print "Wrong credentials. Try again"
 
-
+    ################### REGISTER ########################
     else:
         os.system("cls")
         print "Register below."
@@ -62,8 +64,11 @@ def main():
                 print "Register below."
                 continue
 
+            # make a new user
             sqlcon.newUser(name, password)
-            UserID = sqlcon.sqlQuery("SELECT ID from User WHERE Name='%s'" % name)
+            # get the new user's ID
+            UserID = sqlcon.sqlQuery("SELECT ID from User WHERE Name='%s'" % name)[0][0]
+            # Make the players stats as default TODO make this to be build in in the database
             sqlcon.sqlPost("INSERT INTO Player (MaxHP, CurrentHP, PotisionX, PotisionY, Attack, Defence, User_ID) VALUES (10, 10, 1, 1, 3, 1, %s)" % UserID)
             main() # to login again (just to make sure)
             return

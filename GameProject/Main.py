@@ -2,6 +2,9 @@ import libtcodpy as libtcod
 import Actors
 import SQLCon as sql
 
+# TODO make enemies move with Djikstra map
+# TODO implement Health potions
+
 ##################################### INIT #####################################
 # actual size of the window
 SCREEN_WIDTH = 25
@@ -32,11 +35,13 @@ LevelID = -1
 #################################
 
 
-def changeLevel():
+def changeLevel(level_ID=-1):
     global PlayerID, LevelID, smap
 
     libtcod.console_clear(0)
     try:
+        if level_ID != -1:
+            LevelID = level_ID
         sqlcon.setLevelIDForUserID(LevelID, PlayerID)
     except:
         LevelID = 1
@@ -69,7 +74,7 @@ def makeLoot(x, y):
 
 
 def handleKeys():
-    global  playerScore, exity, exitx, player
+    global  playerScore, exity, exitx, player, PlayerID
 
     key = libtcod.console_wait_for_keypress(True)  # turn-based
 
@@ -98,6 +103,7 @@ def handleKeys():
             global playerScore
             LevelID += 1
             postScore(playerScore)
+            sqlcon.setPlayerStats(player.HPMax, player.Hp, player.Attack, player.Defence, PlayerID)
             changeLevel()
 
     handleCollisionWithObjects(playerx, playery)
@@ -182,8 +188,7 @@ def isBlocked(x, y):
 
 def resetPlayer():
     postScore(0)
-
-    # TODO In progress look sqlcon
+    changeLevel(1)
 
 def gameOver():
     libtcod.console_set_default_foreground(0, libtcod.red)

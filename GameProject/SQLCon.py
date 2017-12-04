@@ -67,7 +67,6 @@ class sqlcon:
         return self.sqlQuery("SELECT * FROM Enemy WHERE Level_ID=%s" % LevelID)
 
     def getPlayersStats(self, UserID):
-        # FIXME
         return self.sqlQuery("SELECT * FROM Player WHERE User_ID=%s" % UserID)#[0]
 
     ########## SET FUNCTIONS ###########
