@@ -2,9 +2,9 @@ import libtcodpy as libtcod
 import Actors
 import SQLCon as sql
 import random
+import Effects
 
-# TODO make enemies move with Djikstra map
-# TODO implement Health potions
+# TODO make damage incications
 
 ##################################### INIT #####################################
 # actual size of the window
@@ -17,16 +17,17 @@ libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'ConsoleGame', False)
 sqlcon = sql.sqlcon()
 ##################################### INIT #####################################
 
-#Temporary Variables
-playerScore = 0
-####################
+global playerScore
 global player
 global PlayerID
 global target
 
+playerScore = 0
+
 objects = []
 enemies = []
 coins = []
+potions = []
 
 exity, exitx = -1, -1
 
@@ -37,17 +38,16 @@ levelChange = False
 #################################
 
 
-def changeLevel(level_ID=-1):
+def changeLevel(level_ID):
     global PlayerID, LevelID, smap
 
     libtcod.console_clear(0)
     try:
-        if level_ID != -1:
+        if level_ID:
             LevelID = level_ID
         sqlcon.setLevelIDForUserID(LevelID, PlayerID)
     except:
-        LevelID = 1
-        changeLevel()
+        changeLevel(1)
 
     smap = sqlcon.getMapDataForID(PlayerID)
 
@@ -60,6 +60,11 @@ def changeLevel(level_ID=-1):
     for Enemy in enemies:
         Enemy.draw()
 
+    libtcod.console_set_default_foreground(0, libtcod.white)
+    libtcod.console_print(0, 1, 22, "%s" % player.Name) #Name of the player
+    libtcod.console_print(0, 15, 23, "Atk: %s" % player.Attack) #Attack points
+    libtcod.console_print(0, 15, 24, "Def: %s" % player.Defence) #Defence points
+
 
 def postScore(score):
     sqlcon.changeScoreForUserID(score, PlayerID)
@@ -69,10 +74,20 @@ def getScore(ID):
 
 
 def makeLoot(x, y):
-    coins.append([x, y])
-    libtcod.console_set_default_foreground(0, libtcod.yellow)
-    libtcod.console_put_char(0, x, y, '$', libtcod.BKGND_NONE)
+    # TODO make the RNG better
+    # FIXME when items get on top of eachother they don't get redrawn + you get only the top item
+    item = random.randint(0,1)
 
+    if item == 0:
+        #if 0 then make a coin
+        coins.append([x, y])
+        libtcod.console_set_default_foreground(0, libtcod.yellow)
+        libtcod.console_put_char(0, x, y, '$', libtcod.BKGND_NONE)
+    else:
+        #else make a potion
+        potions.append([x, y])
+        libtcod.console_set_default_foreground(0, libtcod.red)
+        libtcod.console_put_char(0, x, y, '&', libtcod.BKGND_NONE)
 
 
 def handleKeys():
@@ -86,6 +101,11 @@ def handleKeys():
     playery, playerx = player.Y, player.X
 
     if key.vk == libtcod.KEY_ESCAPE:
+        # When player exits save some stats
+        postScore(playerScore)
+        sqlcon.setPlayerStats(player.HPMax, player.Hp, player.Attack, player.Defence, PlayerID)
+        # TODO Make this vvv to be in the setPlayerStats function !!!
+        sqlcon.sqlPost("UPDATE player SET PositionY=%s, PositionX=%s WHERE User_ID=%s" % (player.Y, player.X, PlayerID))
         return True  # exit game
 
     # movement keys
@@ -104,14 +124,14 @@ def handleKeys():
     # key to move to another level
     if libtcod.console_is_key_pressed(libtcod.KEY_SPACE):
         if player.Y == exity and player.X == exitx:
-            global LevelID, playerScore
+            global LevelID
 
             levelChange = True
 
             LevelID += 1
             postScore(playerScore)
             sqlcon.setPlayerStats(player.HPMax, player.Hp, player.Attack, player.Defence, PlayerID)
-            changeLevel()
+            changeLevel(LevelID)
 
     handleCollisionWithObjects(playerx, playery)
 
@@ -124,8 +144,21 @@ def handleCollisionWithObjects(playerx, playery):
     if isBlocked(playerx, playery):
         #if try fails means it is not an enemy so ignore
         try:
+            enDamage = player.Attack - target.Defence
+            if enDamage < 1:
+                enDamage = 1
             Loot = target.LoseHealth(player.Attack)
-            player.Hp -= 1
+
+            # TODO make the damage more based on the difficulty: * difficulty <-- (do this) or make the enemies stats better***
+            damage = target.Attack - player.Defence
+            # this is to make sure the player takes at least 1 damage and doesn't heal from enemie blows
+            if damage < 1:
+                damage = 1
+            player.Hp -= damage
+
+            # TODO make the damage effect here
+            playerDamageText = Effects.text(player.X, player.Y-1, str(damage))
+            playerDamageText.play()
         except:
             pass
     else:
@@ -136,10 +169,19 @@ def handleCollisionWithObjects(playerx, playery):
             if playerx == i[0] and playery == i[1]:
                 #remove the coin so player won't be able to get the same coin
                 coins.remove(i)
-                playerScore += 1
+                playerScore += random.randint(1,5)
                 #clear the instructions and redraw the score there
-                libtcod.console_print(0, 1, 24, "                  ")
+                libtcod.console_print(0, 1, 24, "            ")
                 libtcod.console_print(0, 1, 24, "Score: %s" % playerScore)
+
+        for i in potions:
+            if playerx == i[0] and playery == i[1]:
+                #remove the coin so player won't be able to get the same coin
+                potions.remove(i)
+                player.Hp += random.randint(2,5)
+                #don't make the current health more than the max health points
+                if player.Hp > player.HPMax:
+                    player.Hp = player.HPMax
 
     if Loot != None:
         #if try fails means it is not an enemy so ignore
@@ -174,9 +216,12 @@ def makeMapObjects():
             if smap[y][x] == '#':
                 objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
             elif smap[y][x] == 'G':
-                enemies.append(Actors.Grunt(Hp=1, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
+                enemies.append(Actors.Grunt(Hp=5, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
             elif smap[y][x] == '>':
                 exity, exitx = y, x
+            elif smap[y][x] == '@':
+                player.Y = y
+                player.X = x
 
 
 def isBlocked(x, y, isEnemy=False):
@@ -212,6 +257,12 @@ def gameOver():
 
     libtcod.console_wait_for_keypress(True)
 
+    libtcod.console_set_default_foreground(0, libtcod.red)
+    libtcod.console_print(0, 9, 11, "You died")
+    libtcod.console_flush()
+
+    libtcod.console_wait_for_keypress(True)
+
 def moveEnemies():
     global enemies
 
@@ -232,25 +283,22 @@ def moveEnemies():
         else:
             xmove -= 1
 
-        print enemy.X, enemy.Y, xmove, ymove
-
         # TODO make this better and smaller
-        # FIXME enemies can go into the player's position
 
         # if 0 and you can move then move on the Y axis else move on X if you can else stay
         if decision == 0:
             # Check blocking
-            if not isBlocked(enemy.X, enemy.Y + ymove):
+            if not isBlocked(enemy.X, enemy.Y + ymove, True):
                 enemy.move(enemy.X, enemy.Y + ymove)
 
-            elif not isBlocked(enemy.X + xmove, enemy.Y):
+            elif not isBlocked(enemy.X + xmove, enemy.Y, True):
                 enemy.move(enemy.X + xmove, enemy.Y)
 
         else:
-            if not isBlocked(enemy.X + xmove, enemy.Y):
+            if not isBlocked(enemy.X + xmove, enemy.Y, True):
                 enemy.move(enemy.X + xmove, enemy.Y)
 
-            elif not isBlocked(enemy.X, enemy.Y + ymove):
+            elif not isBlocked(enemy.X, enemy.Y + ymove, True):
                 enemy.move(enemy.X, enemy.Y + ymove)
 
 
@@ -264,10 +312,11 @@ def main(userID):
     PlayerID = userID
 
     global player
+
+    PlayerName = sqlcon.sqlQuery("SELECT Name FROM User WHERE ID=%s" % PlayerID)[0][0]
     # playerstats all the values ID(Primary Key) and User_ID(Fotrign Key) are useless for now
     ID, MaxHP, CurrentHP, PositionX, PositionY, Attack, Defence, User_ID = sqlcon.getPlayersStats(PlayerID)[0]
-    player = Actors.Player("NAMEHERE", MaxHP, CurrentHP, Attack, Defence, 0, PositionY, PositionX, '@')
-    # TODO put the name here ^^^^^^
+    player = Actors.Player(PlayerName, MaxHP, CurrentHP, Attack, Defence, 0, PositionY, PositionX, '@')
 
     global exity, exitx
 
@@ -281,24 +330,17 @@ def main(userID):
     smap = sqlcon.getMapDataForID(PlayerID)
 
     global LevelID
-    LevelID = 1
-    changeLevel()
+    LevelID = sqlcon.getLevelIDforUserID(PlayerID)[0][0]
+    changeLevel(LevelID)
 
     libtcod.console_set_default_foreground(0, libtcod.lighter_grey)
     for Object in objects:
         Object.draw()
 
-    # libtcod.console_set_default_foreground(0, libtcod.green)
-    # for Enemy in enemies:
-    #     Enemy.draw()
-
-    libtcod.console_set_default_foreground(0, libtcod.white)
-    libtcod.console_print(0, 1, 23, "HP: %s" % player.Hp)
-
     while not libtcod.console_is_window_closed():
         libtcod.console_set_default_foreground(0, libtcod.white)
-        libtcod.console_print(0, 1, 23, "       ")
-        libtcod.console_print(0, 1, 23, "HP: %s" % player.Hp)
+        libtcod.console_print(0, 1, 23, "           ")
+        libtcod.console_print(0, 1, 23, "HP: %s/%s" % (player.Hp, player.HPMax))
 
         if player.Hp <= 0:
             gameOver()
