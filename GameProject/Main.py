@@ -2,7 +2,6 @@ import libtcodpy as libtcod
 import Actors
 import SQLCon as sql
 import random
-import Effects
 
 # TODO make damage incications
 
@@ -141,13 +140,16 @@ def handleCollisionWithObjects(playerx, playery):
 
     Loot = None
 
+    libtcod.console_print(0, 12, 22, "             ")
+    libtcod.console_flush()
+
     if isBlocked(playerx, playery):
         #if try fails means it is not an enemy so ignore
         try:
             enDamage = player.Attack - target.Defence
             if enDamage < 1:
                 enDamage = 1
-            Loot = target.LoseHealth(player.Attack)
+            Loot = target.LoseHealth(enDamage)
 
             # TODO make the damage more based on the difficulty: * difficulty <-- (do this) or make the enemies stats better***
             damage = target.Attack - player.Defence
@@ -157,8 +159,12 @@ def handleCollisionWithObjects(playerx, playery):
             player.Hp -= damage
 
             # TODO make the damage effect here
-            playerDamageText = Effects.text(player.X, player.Y-1, str(damage))
-            playerDamageText.play()
+            # playerDamageText = Effects.text(player.X, player.Y-1, str(damage))
+            # playerDamageText.play()
+
+            if target.Hp > 0:
+                libtcod.console_print(0, 12, 22, "TargetHP: %s" % target.Hp)
+                libtcod.console_flush()
         except:
             pass
     else:
