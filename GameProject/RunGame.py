@@ -6,7 +6,7 @@ sqlcon = SQLCon.sqlcon()
 
 def main():
     print "Welcome to this roguelike (the game is not fun its just to test out the sql database)"
-    awnser = raw_input("(L)ogin or (R)egister or (A)utoLogin > ")
+    awnser = raw_input("(L)ogin or (R)egister or (A)utoLogin > ")[0]
 
     ################## AUTOLOGIN ######################
     #This checks and reads the config.txt to get the id and start the game
