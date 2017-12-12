@@ -2,7 +2,7 @@
 *.pyc
 
 #for the config file/s
-*.txt
+GameProject/*.txt
 
 #Task config
 /.imdone

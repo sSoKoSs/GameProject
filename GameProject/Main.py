@@ -3,7 +3,7 @@ import Actors
 import SQLCon as sql
 import random
 
-# TODO make damage incications
+# TODO make hearlth regenaration for the player after some turns
 
 ##################################### INIT #####################################
 # actual size of the window
@@ -61,9 +61,12 @@ def changeLevel(level_ID):
 
     libtcod.console_set_default_foreground(0, libtcod.white)
     libtcod.console_print(0, 1, 22, "%s" % player.Name) #Name of the player
+    drawStats()
+
+def drawStats():
+    libtcod.console_set_default_foreground(0, libtcod.white)
     libtcod.console_print(0, 15, 23, "Atk: %s" % player.Attack) #Attack points
     libtcod.console_print(0, 15, 24, "Def: %s" % player.Defence) #Defence points
-
 
 def postScore(score):
     sqlcon.changeScoreForUserID(score, PlayerID)
@@ -72,21 +75,34 @@ def getScore(ID):
     return sqlcon.getScoreForUserID(ID);
 
 
-def makeLoot(x, y):
-    # TODO make the RNG better
+def makeLoot(x, y, item=-1):
     # FIXME when items get on top of eachother they don't get redrawn + you get only the top item
-    item = random.randint(0,1)
+
+    # if item == -1 then make a random item
+    if item == -1:
+        # TODO make the RNG better
+        item = random.randint(0,3)
 
     if item == 0:
         #if 0 then make a coin
         coins.append([x, y])
         libtcod.console_set_default_foreground(0, libtcod.yellow)
         libtcod.console_put_char(0, x, y, '$', libtcod.BKGND_NONE)
-    else:
-        #else make a potion
-        potions.append([x, y])
+    elif item == 1:
+        #Health potion
+        potions.append([x, y, 'Health'])
         libtcod.console_set_default_foreground(0, libtcod.red)
         libtcod.console_put_char(0, x, y, '&', libtcod.BKGND_NONE)
+    elif item == 2:
+        #Attack potion
+        potions.append([x, y, 'Attack'])
+        libtcod.console_set_default_foreground(0, libtcod.red)
+        libtcod.console_put_char(0, x, y, 'A', libtcod.BKGND_NONE)
+    elif item == 3:
+        #Defence potion
+        potions.append([x, y, 'Defence'])
+        libtcod.console_set_default_foreground(0, libtcod.light_gray)
+        libtcod.console_put_char(0, x, y, 'D', libtcod.BKGND_NONE)
 
 
 def handleKeys():
@@ -177,17 +193,25 @@ def handleCollisionWithObjects(playerx, playery):
                 coins.remove(i)
                 playerScore += random.randint(1,5)
                 #clear the instructions and redraw the score there
-                libtcod.console_print(0, 1, 24, "            ")
+                libtcod.console_print(0, 1, 24, "              ")
                 libtcod.console_print(0, 1, 24, "Score: %s" % playerScore)
 
         for i in potions:
+            #i[0] = x , i[1] = y , i[2] = type
             if playerx == i[0] and playery == i[1]:
-                #remove the coin so player won't be able to get the same coin
+                if i[2] == "Health":
+                    player.Hp += random.randint(2,5)
+                    #don't make the current health more than the max health points
+                    if player.Hp > player.HPMax:
+                        player.Hp = player.HPMax
+                elif i[2] == "Attack":
+                    player.Attack += random.randint(1,2)
+                elif i[2] == "Defence":
+                    player.Defence += random.randint(1,2)
+
+                #remove the potion so player won't be able to get the same coin
                 potions.remove(i)
-                player.Hp += random.randint(2,5)
-                #don't make the current health more than the max health points
-                if player.Hp > player.HPMax:
-                    player.Hp = player.HPMax
+                drawStats()
 
     if Loot != None:
         #if try fails means it is not an enemy so ignore
@@ -219,15 +243,29 @@ def makeMapObjects():
 
     for y in xrange(SCREEN_HEIGHT-3):
         for x in xrange(SCREEN_WIDTH):
+            # Objects
             if smap[y][x] == '#':
                 objects.append(Actors.Wall(Y=y, X=x, Symbol='#', Blocks=True))
-            elif smap[y][x] == 'G':
-                enemies.append(Actors.Grunt(Hp=5, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
             elif smap[y][x] == '>':
                 exity, exitx = y, x
+            # Enemies
+            elif smap[y][x] == 'G':
+                enemies.append(Actors.Grunt(Hp=5, Attack=3, Defence=0, Loot=1, Y=y, X=x, Symbol='G', Blocks=True))
+
+            # Player
             elif smap[y][x] == '@':
                 player.Y = y
                 player.X = x
+
+            # Items
+            elif smap[y][x] == '$':
+                makeLoot(x, y, item=0)
+            elif smap[y][x] == '&':
+                makeLoot(x, y, item=1)
+            elif smap[y][x] == 'A':
+                makeLoot(x, y, item=2)
+            elif smap[y][x] == 'D':
+                makeLoot(x, y, item=3)
 
 
 def isBlocked(x, y, isEnemy=False):
