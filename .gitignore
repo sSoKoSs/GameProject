@@ -6,3 +6,5 @@ GameProject/*.txt
 
 #Task config
 /.imdone
+
+/.vscode
