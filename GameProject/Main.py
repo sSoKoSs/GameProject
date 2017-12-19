@@ -3,7 +3,7 @@ import Actors
 import SQLCon as sql
 import random
 
-# TODO make hearlth regenaration for the player after some turns
+# TODO make health regenaration for the player after some turns
 
 ##################################### INIT #####################################
 # actual size of the window
@@ -72,7 +72,7 @@ def postScore(score):
     sqlcon.changeScoreForUserID(score, PlayerID)
 
 def getScore(ID):
-    return sqlcon.getScoreForUserID(ID);
+    return sqlcon.getScoreForUserID(ID)
 
 
 def makeLoot(x, y, item=-1):
@@ -173,10 +173,6 @@ def handleCollisionWithObjects(playerx, playery):
             if damage < 1:
                 damage = 1
             player.Hp -= damage
-
-            # TODO make the damage effect here
-            # playerDamageText = Effects.text(player.X, player.Y-1, str(damage))
-            # playerDamageText.play()
 
             if target.Hp > 0:
                 libtcod.console_print(0, 12, 22, "TargetHP: %s" % target.Hp)
@@ -308,42 +304,43 @@ def gameOver():
     libtcod.console_wait_for_keypress(True)
 
 def moveEnemies():
-    global enemies
+    global enemies, moveTimer
 
     for enemy in enemies:
-        decision = random.randint(0,1)
-        ymove = 0
-        xmove = 0
+        if moveTimer % 2 == 0:
+            decision = random.randint(0,1)
+            ymove = 0
+            xmove = 0
 
-        # for Y movement calculate where to go
-        if enemy.Y < player.Y:
-            ymove += 1
-        else:
-            ymove -= 1
+            # for Y movement calculate where to go
+            if enemy.Y < player.Y:
+                ymove += 1
+            else:
+                ymove -= 1
 
-        # for X movement calculate where to go
-        if enemy.X < player.X:
-            xmove += 1
-        else:
-            xmove -= 1
+            # for X movement calculate where to go
+            if enemy.X < player.X:
+                xmove += 1
+            else:
+                xmove -= 1
 
-        # TODO make this better and smaller
+            # TODO make this better and smaller
 
-        # if 0 and you can move then move on the Y axis else move on X if you can else stay
-        if decision == 0:
-            # Check blocking
-            if not isBlocked(enemy.X, enemy.Y + ymove, True):
-                enemy.move(enemy.X, enemy.Y + ymove)
+            # if 0 and you can move then move on the Y axis else move on X if you can else stay
+            if decision == 0:
+                # Check blocking
+                if not isBlocked(enemy.X, enemy.Y + ymove, True):
+                    enemy.move(enemy.X, enemy.Y + ymove)
 
-            elif not isBlocked(enemy.X + xmove, enemy.Y, True):
-                enemy.move(enemy.X + xmove, enemy.Y)
+                elif not isBlocked(enemy.X + xmove, enemy.Y, True):
+                    enemy.move(enemy.X + xmove, enemy.Y)
 
-        else:
-            if not isBlocked(enemy.X + xmove, enemy.Y, True):
-                enemy.move(enemy.X + xmove, enemy.Y)
+            else:
+                if not isBlocked(enemy.X + xmove, enemy.Y, True):
+                    enemy.move(enemy.X + xmove, enemy.Y)
 
-            elif not isBlocked(enemy.X, enemy.Y + ymove, True):
-                enemy.move(enemy.X, enemy.Y + ymove)
+                elif not isBlocked(enemy.X, enemy.Y + ymove, True):
+                    enemy.move(enemy.X, enemy.Y + ymove)
 
 
 #############################################
@@ -376,6 +373,9 @@ def main(userID):
     global LevelID
     LevelID = sqlcon.getLevelIDforUserID(PlayerID)[0][0]
     changeLevel(LevelID)
+
+    global moveTimer
+    moveTimer = 0
 
     libtcod.console_set_default_foreground(0, libtcod.lighter_grey)
     for Object in objects:
@@ -412,6 +412,8 @@ def main(userID):
         libtcod.console_set_default_foreground(0, libtcod.green)
         for Enemy in enemies:
             Enemy.draw()
+
+        moveTimer += 1
 
 
         if exit:
